@@ -13,6 +13,7 @@ const string sigurnosnaPitanja[] = { "Koji vam je omiljeni film?", "Kako se zove
 const string file = "podaci.txt";
 
 //Struktura za podatke
+
 struct Podaci{
 	string korisnickoIme;
 	string sifra;	
@@ -229,3 +230,4 @@ int main(){
 
 	return 0;	
 }
+
