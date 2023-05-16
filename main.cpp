@@ -11,7 +11,6 @@ using json = nlohmann::json;
 const string sigurnosnaPitanja[] = { "Koji vam je omiljeni film?", "Kako se zove vas najdrazi nastavnik?", "Koja vam je omiljena boja?", "Koja vam je omiljena hrana?", "Kako se zove ulica na kojoj ste odrasli?" };
 //Fajl koji cemo korsistiti kao bazu
 const string file = "podaci.txt";
-
 //Struktura za podatke
 
 struct Podaci{
@@ -194,40 +193,161 @@ void ispisProvjera(){
     infile.close();
 }
 
+//Funkcija za promjenu sifre
+void promjenaSifre(){
+	string temp;
+	string odg;
+	string novaS;
+	
+	ifstream infile(file);
+    json jsonNiz;
+	
+	if (infile.good()) {
+        infile >> jsonNiz;
+    }
+    
+	
+	cout << "Unesite korisnicko ime: ";
+	cin.ignore();
+	getline(cin,temp);
+	
+if (provjeraKorisnickogImena(temp,file)){ // Provjeravamo da li postoji osoba sa tim korisnickim imenom
+
+	for (auto& jsonObj : jsonNiz){ // prolazimo kroz niz osoba i trazimo isto korisnicko ime
+	if(temp==jsonObj["korisnickoIme"]){
+	
+		
+			do {
+			cout << "Sigurnosno pitanje: " << jsonObj["sigurnosnoPitanje"] << endl;
+			cout << "Odgovor: ";
+			getline(cin,odg);
+			}while(jsonObj["odgovor"]!=odg); // trazimo odgovor na sigurnosno pitanje 
+	cout << "Unesite novu sifru profila: ";
+	char c;
+	while ((c = _getch()) != '\r') { // \r je Enter 
+    	if (c == '\b' && !novaS.empty()) { // brisanje
+			novaS.pop_back();
+        	cout << "\b \b";}
+		else if (isprint(c)) {
+			novaS += c;
+        	cout << '*';
+			}
+		}	
+		jsonObj["sifra"]=novaS; // unos nove sifre
+		ofstream outfile(file);
+		
+	cout<<endl;
+	outfile << jsonNiz.dump(4) << endl; // zapis u file sa novom sifrom
+    outfile.close();
+	 
+return;}
+}
+}
+cout << "Nismo pronasli korisnika probajte ponovo: "<<endl;
+}
+
+
+//Funkcija za ulaz u sistem
+void login(){
+	
+	string username;
+string password;
+	
+	ifstream infile(file);
+    json jsonNiz;
+	
+	if (infile.good()) {
+        infile >> jsonNiz;
+    }
+    
+	cout << "Unesite korisnicko ime: ";
+	cin.ignore();
+	getline(cin,username);
+	if (provjeraKorisnickogImena(username,file)){ //Provjerava da li postoji korinsik sa tim korisnickim imenom
+	for (auto& jsonObj : jsonNiz){ // porlazi kroz niz
+		if(username==jsonObj["korisnickoIme"]){ // staje na osobi koja ima isto korisnicko ime
+		do {
+		password.erase();	// u slucaju da osoba unese sifru 2 ili vise puta , brisemo prethodno unesene podatke
+		cout << "Unesite  sifru profila: ";
+	char c;
+	while ((c = _getch()) != '\r') { // \r je Enter 
+    	if (c == '\b' && !password.empty()) { // brisanje
+			password.pop_back();
+        	cout << "\b \b";}
+		else if (isprint(c)) {
+			password += c;
+        	cout << '*';
+			}
+		}
+		cout<<endl;	
+		}while(jsonObj["sifra"]!=password); // Unosi sifru sve dok ne unese tacnu sifru
+		cout<<"--------------------------------"<<endl;
+		cout << "USPJESNO STE USLI U SISTEM! "<<endl;
+		return;
+	}
+
+	
+	
+}
+}
+	else {
+		cout << "Korisnik nije pronadjen u sistemu! "<<endl;
+		
+	}
+}
+
+
 int main(){
 
 	int a;
-
+	bool fail;
 	//Menu
 	do{
 		cout<<"0. Izlaz"<<endl;
 		cout<<"1. Unos profila "<<endl;
 		cout<<"2. Ispis svih profila "<<endl;
 		cout<<"3. Provjera ispisa "<<endl;
+		cout<<"4. Promjena sifre " <<endl;
+		cout<<"5. Login"<<endl;
 		cout<<endl;
-		cout<<"Izaberite opciju: ";
-		cin>>a;
+		do  
+   		{  
+      	cout<<"Izaberite opciju: "; 
+      	cin >> a;  
+		fail = cin.fail();  
+		cin.clear();  
+      	cin.ignore(INT_MAX, '\n');  
+  		}while(fail);  
+		
 		if(a==0){
 			cout<<"Izasli ste iz sistema!";
+			return 0;
 		}
 		if(a==1){
 			unos();
-			system("pause");
-			system("cls");
+			
 		}
 		if(a==2){
 			ispis();
-			system("pause");
-			system("cls");
+			
 		}
 		if(a==3){
 			ispisProvjera();
-			system("pause");
-			system("cls");
+			
 		}
+		if (a==4){
+		promjenaSifre();
+	
+		}
+		if (a==5){
+		login();
+	
+		}
+		system("pause");
+		system("cls");
+		
 
-	}while(a!=0);
-
-	return 0;	
+	}while(true);
+	
 }
 
