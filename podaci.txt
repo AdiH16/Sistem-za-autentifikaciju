@@ -1,2 +1,19 @@
 [
+    {
+        "email": "adi@gmail.com",
+        "korisnickoIme": "adi",
+        "odgovor": "mirso",
+        "salt": [
+            117,
+            119,
+            229,
+            121,
+            18,
+            30,
+            136,
+            116
+        ],
+        "sifra": "91a396da6aca0bb8cfa0184b06f7222c800153c5d05db16817c63128d1a520ad",
+        "sigurnosnoPitanje": "Kako se zove vas najdrazi nastavnik?"
+    }
 ]
