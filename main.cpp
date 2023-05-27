@@ -23,10 +23,6 @@ struct Podaci{
 	unsigned char salt[8];
 };
 
-int PKCS5_PBKDF2_HMAC(const char* pass, int passlen,
-    const unsigned char* salt, int saltlen, int iter,
-    const EVP_MD* digest, int keylen, unsigned char* out);
-
 //Funkcija koja provjerava da li korisnicko ime vec postoji
 bool provjeraKorisnickogImena(const string& korisnickoIme, const string& file)
 {
@@ -54,10 +50,9 @@ bool provjeraZnaka (const string email){
 		if(email[i]=='@'){
 			return true;
 		}
-	}	
-return false;
-    
-    
+	}
+		
+	return false;
 }
 
 
@@ -87,18 +82,21 @@ void generisanjeSoli(unsigned char* salt, int duzSalt) {
 }
 
 string hashSifre(const string& sifra, unsigned char* salt, int duzSalt) {
-    const int iteracija = 10000;
-    const int duzinaKljuca = 32; // SHA-256 naprav 256-bitni kljuc
+    const int iteracija = 10000; // Broj iteracija salt-a
+    const int duzinaKljuca = 32; // SHA-256 napravi 256-bitni kljuc
 
-    unsigned char kljuc[duzinaKljuca];
-    PKCS5_PBKDF2_HMAC(sifra.c_str(), sifra.length(), salt, duzSalt, iteracija, EVP_sha256(), duzinaKljuca, kljuc);
+    unsigned char kljuc[duzinaKljuca]; // Kljuc koji ce se generisati
+    PKCS5_PBKDF2_HMAC(sifra.c_str(), sifra.length(), salt, duzSalt, iteracija, EVP_sha256(), duzinaKljuca, kljuc); // Algoritam za generisanje kljuca
 
     string hash;
     char hexBuf[duzinaKljuca * 2 + 1];
+    // Pretvaranje u heksadecimalni zapis
     for (int i = 0; i < duzinaKljuca; i++) {
         sprintf(hexBuf + (i * 2), "%02x", kljuc[i]);
     }
+    // Postavljanje null-terminatora
     hexBuf[duzinaKljuca * 2] = '\0';
+    // Konverzija u string
     hash = string(hexBuf);
 
     return hash;
@@ -179,6 +177,7 @@ void unos() {
         cout << i + 1 << ". " << sigurnosnaPitanja[i] << endl;
     }
     do {
+    	cout << "Broj pitanja: ";
         cin >> p.sigurnosnoPitanje;
     } while (p.sigurnosnoPitanje < 1 || p.sigurnosnoPitanje > 5);
     cout << "Unesite odgovor na sigurnosno pitanje: ";
@@ -289,6 +288,7 @@ void promjenaSifre(){
 				
 				do{	
 					cout << "Unesite odgovor za sigurnosno pitanje! " <<endl;
+					cout << jsonObj["sigurnosnoPitanje"] << endl;
 					getline(cin,odg);
 					hashOdgovor=hashSifre(odg,salt,salt_len);
 				}while(jsonObj["odgovor"]!=hashOdgovor);
@@ -461,43 +461,100 @@ void ispisKorisnika(){
 
 void adminMenu(){
 	int k;	
-	bool fail;
-	do {  	
-		system("cls");
-		cout<<"1. Ispis svih profila "<<endl;
-		cout<<"2. Provjera ispisa "<<endl;
-		cout<<"3. Brisanje profila " <<endl;
-		cout<<"4. Pretraga po korisnickom imenu"<<endl;
-		cout<<"0. Izlaz"<<endl;
-		cout<<endl;
-			do{
-			
-	      		cout<<"Izaberite opciju: "<<endl; 
-	      		cin >> k;  
-				fail = cin.fail();  
-				cin.clear();  
-	      		cin.ignore(INT_MAX, '\n');  
-  			}while(fail);
-		if (k==0){
-			return;
-		}
-		if(k==1){
-			ispis();
-		}
-		if(k==2){
-			ispisProvjera();
-			
-		}
-		if (k==3){
-			brisanjeKorisnika();
-		}	
-		if(k==4){
-			ispisKorisnika();
-		}
-		system("pause");
-		system("cls");	
+	bool fail, uspjeh = false;
+	string username;
+	string password;
+	unsigned char salt[8];
+    int salt_len = 8;
+	ifstream infile(file);
+    json jsonNiz;
 	
-	}while(true);
+	if (infile.good()) {
+        infile >> jsonNiz;
+    }
+    
+	cout << "Unesite korisnicko ime: ";
+	getline(cin,username);
+	if(username != "Ivaylo"){
+		cout << "Admin ne postoji!\n";
+		return;
+	}
+	for (auto& jsonObj : jsonNiz){ // prolazi kroz niz
+		if(username==jsonObj["korisnickoIme"]){ // staje na osobi koja ima isto korisnicko ime
+			for (int i = 0; i < salt_len; ++i) {
+			    salt[i] = jsonObj["salt"][i].get<unsigned char>();
+			    
+			}
+			int br=0;
+			string hashedPassword = "";
+			do {
+				password.erase();	// u slucaju da osoba unese sifru 2 ili vise puta , brisemo prethodno unesene podatke
+				cout << "Unesite sifru profila: ";
+				char c;
+				while ((c = _getch()) != '\r') { // \r je Enter 
+			    	if (c == '\b' && !password.empty()) { // brisanje
+						password.pop_back();
+			        	cout << "\b \b";
+					}
+					else if (isprint(c)) {
+						password += c;
+			        	cout << '*';
+					}
+				}
+				cout<<endl;	
+				hashedPassword = hashSifre(password, salt, salt_len);
+				br++;
+			}while(jsonObj["sifra"]!=hashedPassword && br!=3); // Unosi sifru sve dok ne unese tacnu sifru
+			if(br==3){
+				cout << "PREVISE PUTA STE POGRIJESILI SIFRU, POKUSAJTE KASNIJE\n";
+				return;
+			} 
+			cout<<"--------------------------------"<<endl;
+			cout << "USPJESNO STE USLI U SISTEM! "<<endl;
+			uspjeh = true;
+		}
+	}
+	if(uspjeh){
+		do {  	
+			system("cls");
+			cout<<"1. Ispis svih profila "<<endl;
+			cout<<"2. Provjera ispisa "<<endl;
+			cout<<"3. Brisanje profila " <<endl;
+			cout<<"4. Pretraga po korisnickom imenu"<<endl;
+			cout<<"0. Izlaz"<<endl;
+			cout<<endl;
+				do{
+				
+		      		cout<<"Izaberite opciju: "<<endl; 
+		      		cin >> k;  
+					fail = cin.fail();  
+					cin.clear();  
+		      		cin.ignore(INT_MAX, '\n');  
+	  			}while(fail);
+			if (k==0){
+				return;
+			}
+			if(k==1){
+				ispis();
+			}
+			if(k==2){
+				ispisProvjera();
+				
+			}
+			if (k==3){
+				brisanjeKorisnika();
+			}	
+			if(k==4){
+				ispisKorisnika();
+			}
+			system("pause");
+			system("cls");	
+		
+		}while(true);	
+	}
+	else
+		cout << "GRESKA!\n";
+	
 }
 
 int main(){
