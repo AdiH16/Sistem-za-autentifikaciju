@@ -3,7 +3,7 @@
 #include <conio.h>
 #include <iomanip>
 #include <fstream>
-#include "json/single_include/nlohmann/json.hpp"
+#include "json.hpp"
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 using namespace std;
